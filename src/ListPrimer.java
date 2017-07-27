@@ -13,12 +13,7 @@ import java.util.List;
  * https://stackoverflow.com/questions/17105167/create-array-of-objects-at-run-time-using-class-name-in-java
  * http://blog.xebia.com/acessing-generic-types-at-runtime-in-java/
  */
-public class ListPrimer<T> {
-    // the class of structureInstance
-    private Class<?> structureClass;
-    private Class<?> contentsClass;
-    private Object structureInstance;
-    private ListFieldPrimer fieldPrimer;
+public class ListPrimer<T> extends AbstractPrimer<T> {
     // todo later: set the contents and next in the constructor for easier getList() function and other efficiency
     private Object contents;
 
@@ -27,43 +22,34 @@ public class ListPrimer<T> {
     }
 
     public ListPrimer(Object structureInstance, Class<?> contentsClass, Class<?> inclusiveParent) throws IllegalAccessException {
-        structureClass = structureInstance.getClass();
+        super(structureInstance, contentsClass, inclusiveParent);
         if (structureClass.getTypeParameters().length != 1) throw new IllegalArgumentException("Class must have one type parameter");
-        this.contentsClass = contentsClass;
 
-        this.structureInstance = structureInstance;
-        this.fieldPrimer = new ListFieldPrimer(structureClass, contentsClass, inclusiveParent);
         // connecting fields are object(s) whose class as structureInstance typically named "next" (and "previous" if there are two)
         if (fieldPrimer.getConnectedNodeFields().size() > 2 || fieldPrimer.getConnectedNodeFields().size() < 1) throw new IllegalArgumentException("Class must have one or two connecting fields");
         contents = fieldPrimer.getContentField().get(structureInstance);
-    }
-
-    /**
-     * Be careful using this constructor
-     * @param copyList
-     * @param structureInstance
-     */
-    private ListPrimer(ListPrimer<T> copyList, T structureInstance) {
-        structureClass = structureInstance.getClass();
-
-        this.structureInstance = structureInstance;
-        this.contentsClass = copyList.contentsClass;
-        this.fieldPrimer = copyList.fieldPrimer;
     }
 
     public List<Object> getList() throws IllegalAccessException {
         List<Object> result = new ArrayList<>();
         ListPrimer<T> iterativeCopy = this;
 
+        // todo later remove this while loop as the next copy should never equal null
         // while the connected node does not equal null (just in case
         while (iterativeCopy.getNext() != null) {
             result.add(iterativeCopy.getContents());
-            iterativeCopy = new ListPrimer<T>(this, iterativeCopy.getNext());
+            iterativeCopy = getNextListPrimer();
             // if we have iterated through/ looped around
             if (iterativeCopy.getNext() == this.getNext()) break;
         }
 
         return result;
+    }
+
+    private ListPrimer<T> getNextListPrimer() throws IllegalAccessException {
+        ListPrimer<T> copy = this;
+        copy.structureInstance = getNext();
+        return copy;
     }
 
     /**
@@ -103,5 +89,13 @@ public class ListPrimer<T> {
     public Object getContents() throws IllegalAccessException {
         Field contentField = fieldPrimer.getContentField();
         return contentField.get(structureInstance);
+    }
+
+    public Class<?> getContentsClass() {
+        return contentsClass;
+    }
+
+    public Class<?> getStructureClass() {
+        return structureClass;
     }
 }
