@@ -41,7 +41,7 @@ public class LinkedList<T> {
         /*
          * The following is done when there is no next
          * element, and the the data is null. This situation
-         * occurs after .clear()/
+         * occurs after .clear()/ instantiation with a zero-args constructor
          */
         if (getContents() == null && getNext() == null) {
             setContents(o);
